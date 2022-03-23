@@ -1,0 +1,106 @@
+---
+title: "P8131 HW5"
+output: pdf_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(MASS) # negative bino
+library(pscl) # zero-inflated poission
+library(tidyverse)
+```
+
+# 1. Study of nesting horseshoe crabs
+
+## (a) Fit a Poisson model (M1) with log link with W as the single predictor. Check the goodness of fit and interpret your model.
+
+```{r 1a_read, message=FALSE}
+crabs <- read_table("HW5-crab.txt", col_names = TRUE)
+crabs
+```
+
+### Fit a Poisson model (M1) with log link with W as the single predictor
+
+```{r 1a_model, message=FALSE}
+crabs.glm1 <- glm(Sa~W, family=poisson(link=log), data=crabs)
+summary(crabs.glm1) # n=34, p=5-1 + 4-1 + 2-1 + 1=9
+```
+
+The model is $log(satellites_i) = \beta_1+\beta_2log(W_i) = -3.30476 + 0.16405 \cdot log(W_i)$
+
+### Model Interpretation
+for 
+
+### Goodness of fit
+
+Then we calculate chi-squared value to evaluate the goodness of fit of this model:
+
+$H_0$: The model is close to the full model, $H_1$: not close to full model, significant level is 0.05
+
+```{r 1a_goodness}
+fit_p <- c(fitted.values(crabs.glm1))
+# pearson residuals
+pearsonresid <- (crabs$Sa-fit_p)/sqrt(fit_p)
+# Chi-square X^2
+chisq <- sum(pearsonresid*pearsonresid);chisq
+deviance <- crabs.glm1$deviance;deviance
+# test deviance
+pchisq(deviance,df=crabs.glm1$df.residual, lower.tail = FALSE) # chisq test
+```
+
+So the Generalized Pearson Chisq Statistics is $\chi^2=544.157$, and deviance $D = 567.879$. The p-value of the goodness-of-fit chi-squared test is very small, meaning that the model does not fit the data well. We need to consider adding more predictors or dispersion parameter into the model. 
+
+## (b) Fit a model (M2) with W and Wt as predictors. Compare it with the model in (a). Interpret your results.
+
+### Fit M2
+```{r 1b_model}
+crabs.glm2 <- glm(Sa~W+Wt, family=poisson(link=log), data=crabs)
+summary(crabs.glm2) # n=34, p=5-1 + 4-1 + 2-1 + 1=9
+```
+
+So the new model (M2) is $log(satellites_i) = \beta_1+\beta_2log(W_i)+\beta_3log(Wt_i) = -1.29168 + 0.04590 \cdot log(W_i) + 0.44744 \cdot log(Wt_i)$
+
+### Model Interpretation
+
+The model is interpreted as:
+
+### Compare M1 and M2
+```{r 1b_anova}
+crabs.glm2$deviance
+anova(crabs.glm1, crabs.glm2, test="Chisq")
+```
+
+The devaince of M2 is 559.8852, which is smaller than the deviance of M1. Also, the p-value of the chi-square test is $0.004695 < 0.05$, meaning that the predictor weight (Wt) is statistically significant in prediction of number of satellites. We can conclude that M2 better fits the data than M1. 
+
+## (c) Check over dispersion in M2. Interpret the model after adjusting for over dispersion.
+
+### Check for over dispersion in M2 via half-normal plot
+```{r 1c_half}
+plot(qnorm((173+1:173+0.5)/(2*173+1.125)),sort(abs(residuals(crabs.glm2,type='pearson',data=crabs))),
+     xlab='Expected Half-Normal Order Stats',
+     ylab='Ordered Abs Pearson Residuals')
+abline(a=0,b=1)
+```
+The empirical slope is apparently off 1. Then we calculate the dispersion factor:
+
+```{r 1c_overdisp}
+crabs.glm3 <- glm(Sa~W+Wt, family=quasi(link=log,variance=mu), data=crabs)
+summary(crabs.glm3) # check ?quasi
+```
+
+The Dispersion parameter is therefore 3.156449. 
+
+### Model interpretation
+
+
+# 2. Fish
+
+## (a) Fit a Poisson model with log link to the data with area, year, and length as predictors. Interpret each model parameter.
+
+```{r 2a_model}
+
+```
+
+
+
+
